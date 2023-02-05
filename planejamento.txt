@@ -1,4 +1,4 @@
-* sem login
+ROTAS * sem login
 
 POST    * api/auth/login(email,password)
 POST    * api/auth/logout
@@ -23,4 +23,10 @@ POST    api/post/id/comment (txt)
 GET     api/search (txt)
 
 
+CONTROLLERS
+AuthController
+UserController
+FeedController
+PostCrontroller
+SearchCrontoller
 
