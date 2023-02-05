@@ -19,6 +19,8 @@ API DEVSBOOK, projeto desenvolvido inspirado no Face.
 As tecnologias utilizadas foram:
 
 -   [LARAVEL](https://laravel.com/)
+-   [JWT-LARAVEL](https://jwt-auth.readthedocs.io/en/develop/laravel-installation/)
+-   [IMAGE INTERVATION](https://image.intervention.io/v2)
 
 ---
 
