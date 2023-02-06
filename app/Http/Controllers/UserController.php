@@ -28,15 +28,17 @@ class UserController extends Controller
         if($name && $email && $password && $birthdate){
             //validar data de nascimento
             if(strtotime($birthdate) === false){
-                $array['error'] = 'Data de nascimento inválida.';
-                return $array;
+                // $array['error'] = 'Data de nascimento inválida.';
+                // return $array;
+                return response()->json(['error' => 'Data de nascimento inválida.'], 400);
             }
 
             //verificar existencia do email
             $emailExists = User::where('email', $email)->count();
             if($emailExists > 0){
-                $array['error'] = 'E-mail já cadastrado.';
-                return $array;
+                // $array['error'] = 'E-mail já cadastrado.';
+                // return $array;
+                return response()->json(['error' => 'E-mail já cadastrado.'], 400);
             }
             //cria novo usuário
             $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -54,15 +56,19 @@ class UserController extends Controller
             ]);
 
             if(!$token){
-                $array['error'] = 'Opss.. Ocorreu um erro.';
-                return $array;
+                // $array['error'] = 'Opss.. Ocorreu um erro.';
+                // return $array;
+                return response()->json(['error' => 'Opss.. Ocorreu um erro.'], 500);
             }
 
             $array['token'] = $token;
+
         }else{
-            $array['error'] = 'Preencha todos os campos.';
-            return $array;
+            // $array['error'] = 'Preencha todos os campos.';
+            // return $array;
+            return response()->json(['error' => 'Preencha todos os campos.'], 400);
         }
+
         return $array;
     }
 
