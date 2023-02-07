@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
-
+use Image;
 class UserController extends Controller
 {
     private $loggedUser;
@@ -77,12 +77,100 @@ class UserController extends Controller
         return response()->json(['teste' => 'teste Usuário']);
     }
 
-    public function update()
+    public function update(Request $request)
     {
+        $array = ['error' => ''];
+        $user = User::find($this->loggedUser->id);
+
+        $name = $request->name;
+        $email = $request->email;
+        $birthdate = $request->birthdate;
+        $city = $request->city;
+        $work = $request->work;
+        $password = $request->password;
+        $passowrd_confirm = $request->passowrd_confirm;
+
+
+        if($name){
+            $user->name = $name;
+        }
+
+        if($city){
+            $user->city = $city;
+        }
+
+        if($work){
+            $user->work = $work;
+        }
+
+        if($email){
+            if($email !== $user->email){
+                $emailExists = User::where('email', $email)->count();
+                if ($emailExists > 0) {
+                    return response()->json(['error' => 'E-mail já cadastrado.'], 400);
+                }
+                $user->email = $email;
+            }
+        }
+
+        if($birthdate){
+            if (strtotime($birthdate) === false) {
+                return response()->json(['error' => 'Data de nascimento inválida.'], 400);
+            }
+            $user->birthdate = $birthdate;
+        }
+
+        if($password && $passowrd_confirm){
+            if($password !== $passowrd_confirm){
+                return response()->json(['error' => 'Senhas não batem.'], 400);
+            }
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $user->password = $hash;
+        }
+
+        $user->save();
+        $array['user'] = $user;
+        return $array;
+        // return response()->json([$array,$user],200);
     }
 
-    public function updateAvatar()
+    public function updateAvatar(Request $request)
     {
+        $array = ['error' => ''];
+        $allowedTypes = ['image/jpg','image/jpeg','image/png'];
+
+        $image = $request->file('avatar');
+
+        if(empty($image)){
+            return response()->json(['error' => 'Arquivo não enviado.'],400);
+        }
+
+        if(in_array($image->getClientMimeType(), $allowedTypes)){
+            $ext = $request->file('avatar')->extension();
+            $filename = md5(time() . rand(0, 9999)) . '.' . $ext;
+            // //Apagar foto antiga
+            // $photoOld = '/storage/' . $car->photo;
+            // $path = public_path();
+
+
+            $destPath = public_path('/medias/avatars');
+            //exclui foto antiga
+            // if (file_exists($destPath.$filename)) {
+            //     unlink($destPath.$filename);
+            // }
+
+            $img = Image::make($image->path())->fit(200,200)->save("{$destPath}/{$filename}");
+
+            $user = User::find($this->loggedUser->id);
+            $user->avatar = $filename;
+            $user->save();
+
+            $array['url'] = url("/medias/avatars/{$filename}");
+        }else{
+            return response()->json(['error' => 'Arquivo não suportado.'],400);
+        }
+
+        return $array;
     }
 
     public function updateCover()
