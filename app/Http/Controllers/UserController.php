@@ -140,6 +140,7 @@ class UserController extends Controller
         $allowedTypes = ['image/jpg','image/jpeg','image/png'];
 
         $image = $request->file('avatar');
+        $user = User::find($this->loggedUser->id);
 
         if(empty($image)){
             return response()->json(['error' => 'Arquivo não enviado.'],400);
@@ -148,24 +149,21 @@ class UserController extends Controller
         if(in_array($image->getClientMimeType(), $allowedTypes)){
             $ext = $request->file('avatar')->extension();
             $filename = md5(time() . rand(0, 9999)) . '.' . $ext;
-            // //Apagar foto antiga
-            // $photoOld = '/storage/' . $car->photo;
-            // $path = public_path();
-
-
             $destPath = public_path('/medias/avatars');
-            //exclui foto antiga
-            // if (file_exists($destPath.$filename)) {
-            //     unlink($destPath.$filename);
-            // }
 
+            // //Apagar foto antiga
+            $photoOld = '/' . $user->avatar;
+            if (file_exists($destPath.$photoOld) && $user->avatar != 'avatar.jpg') {
+                unlink($destPath.$photoOld);
+            }
+
+            //salvar / atualizar foto
             $img = Image::make($image->path())->fit(200,200)->save("{$destPath}/{$filename}");
-
-            $user = User::find($this->loggedUser->id);
             $user->avatar = $filename;
             $user->save();
 
             $array['url'] = url("/medias/avatars/{$filename}");
+
         }else{
             return response()->json(['error' => 'Arquivo não suportado.'],400);
         }
