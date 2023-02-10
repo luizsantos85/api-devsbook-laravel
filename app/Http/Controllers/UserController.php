@@ -171,7 +171,39 @@ class UserController extends Controller
         return $array;
     }
 
-    public function updateCover()
+    public function updateCover(Request $request)
     {
+        $array = ['error' => ''];
+        $allowedTypes = ['image/jpg', 'image/jpeg', 'image/png'];
+
+        $image = $request->file('cover');
+        $user = User::find($this->loggedUser->id);
+
+        if (empty($image)) {
+            return response()->json(['error' => 'Arquivo não enviado.'], 400);
+        }
+
+        if (in_array($image->getClientMimeType(), $allowedTypes)) {
+            $ext = $request->file('cover')->extension();
+            $filename = md5(time() . rand(0, 9999)) . '.' . $ext;
+            $destPath = public_path('/medias/covers');
+
+            // //Apagar foto antiga
+            $photoOld = '/' . $user->cover;
+            if (file_exists($destPath . $photoOld) && $user->cover != 'cover.jpg') {
+                unlink($destPath . $photoOld);
+            }
+
+            //salvar / atualizar foto
+            $img = Image::make($image->path())->fit(850, 310)->save("{$destPath}/{$filename}");
+            $user->cover = $filename;
+            $user->save();
+
+            $array['url'] = url("/medias/covers/{$filename}");
+        } else {
+            return response()->json(['error' => 'Arquivo não suportado.'], 400);
+        }
+
+        return $array;
     }
 }
