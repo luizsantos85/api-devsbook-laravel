@@ -163,6 +163,7 @@ class UserController extends Controller
             $user->save();
 
             $array['url'] = url("/medias/avatars/{$filename}");
+            // $array['url'] = $filename;
 
         }else{
             return response()->json(['error' => 'Arquivo não suportado.'],400);
@@ -200,6 +201,7 @@ class UserController extends Controller
             $user->save();
 
             $array['url'] = url("/medias/covers/{$filename}");
+            // $array['url'] = $filename;
         } else {
             return response()->json(['error' => 'Arquivo não suportado.'], 400);
         }
