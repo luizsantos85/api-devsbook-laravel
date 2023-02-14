@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
+use App\Models\UsersRelation;
+use App\Models\User;
+use App\Models\PostsComment;
 use Image;
+use src\models\UserRelation;
 
 class FeedController extends Controller
 {
@@ -17,9 +21,38 @@ class FeedController extends Controller
         $this->loggedUser = auth()->user();
     }
 
-    public function read()
+    public function read(Request $request)
     {
+        $array = ['error' => ''];
+        $page = intval($request->page);
+        $perPage = 2;
 
+        //1. pegar a lista de usuarios q eu sigo.
+        $users = [];
+        $userList = UsersRelation::where('user_from', $this->loggedUser->id);
+        foreach ($userList as $userItem) {
+            $users[] = $userItem['user_to'];
+        }
+        $users[] = $this->loggedUser->id;
+
+        //2. pegar os posts ordenadoo pela data
+        $postList = Post::whereIn('user_id', $users)
+            ->orderBy('created_at','desc')
+            ->offset($page * $perPage)
+            ->limit($perPage)
+            ->get();
+
+        $total = Post::whereIn('user_id', $users)->count();
+        $pageCount = ceil($total / $perPage);
+
+        //3. preencher as informações adicionais
+        $post = $this->postListToObject($postList, $this->loggedUser->id);
+
+        $array['posts'] = [];
+        $array['pageCount'] =  $pageCount;
+        $array['currentPage'] = $page;
+
+        return $array;
     }
 
     public function userFeed()
@@ -83,4 +116,10 @@ class FeedController extends Controller
 
         return $array;
     }
+
+    private function postListToObject($postList, $userId)
+    {
+
+    }
+
 }

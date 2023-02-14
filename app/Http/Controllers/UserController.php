@@ -74,7 +74,8 @@ class UserController extends Controller
 
     public function read()
     {
-        return response()->json(['teste' => 'teste Usuário']);
+        $user = $this->loggedUser;
+        return response()->json(['user' => $user]);
     }
 
     public function update(Request $request)
