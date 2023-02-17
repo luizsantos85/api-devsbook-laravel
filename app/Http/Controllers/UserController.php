@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\UsersRelation;
 use Image;
+
 class UserController extends Controller
 {
     private $loggedUser;
 
     public function __construct()
     {
-        $this->middleware('auth:api',['except' => ['create']]);
+        $this->middleware('auth:api', ['except' => ['create']]);
         $this->loggedUser = auth()->user();
     }
 
@@ -25,9 +28,9 @@ class UserController extends Controller
         $password = $request->input('password');
         $birthdate = $request->input('birthdate');
 
-        if($name && $email && $password && $birthdate){
+        if ($name && $email && $password && $birthdate) {
             //validar data de nascimento
-            if(strtotime($birthdate) === false){
+            if (strtotime($birthdate) === false) {
                 // $array['error'] = 'Data de nascimento inválida.';
                 // return $array;
                 return response()->json(['error' => 'Data de nascimento inválida.'], 400);
@@ -35,7 +38,7 @@ class UserController extends Controller
 
             //verificar existencia do email
             $emailExists = User::where('email', $email)->count();
-            if($emailExists > 0){
+            if ($emailExists > 0) {
                 // $array['error'] = 'E-mail já cadastrado.';
                 // return $array;
                 return response()->json(['error' => 'E-mail já cadastrado.'], 400);
@@ -55,15 +58,14 @@ class UserController extends Controller
                 'password' => $password
             ]);
 
-            if(!$token){
+            if (!$token) {
                 // $array['error'] = 'Opss.. Ocorreu um erro.';
                 // return $array;
                 return response()->json(['error' => 'Opss.. Ocorreu um erro.'], 500);
             }
 
             $array['token'] = $token;
-
-        }else{
+        } else {
             // $array['error'] = 'Preencha todos os campos.';
             // return $array;
             return response()->json(['error' => 'Preencha todos os campos.'], 400);
@@ -72,9 +74,39 @@ class UserController extends Controller
         return $array;
     }
 
-    public function read()
+    public function read($id = false)
     {
-        $user = $this->loggedUser;
+        if ($id) {
+            $user = User::find($id);
+            if (!$user) {
+                return response()->json(['error' => 'Usuário não encontrado.'], 400);
+            }
+        } else {
+            $user = $this->loggedUser;
+        }
+
+        //Calculo idade
+        $dateFrom = new \DateTime($user->birthdate);
+        $dateTo = new \DateTime('today');
+
+        $user->age = $dateFrom->diff($dateTo)->y;
+        $user->me = ($user->id == $this->loggedUser->id) ? true : false;
+        $user->avatar = url("media/avatars/{$user->avatar}");
+        $user->cover = url("media/covers/{$user->cover}");
+
+        //Seguidores
+        $user->followers = UsersRelation::where('user_to', $user->id)->count();
+        //Seguindo
+        $user->following = UsersRelation::where('user_from', $user->id)->count();
+        //Qtd de fotos
+        $user->photoCount = Post::where('user_id', $user->id)->where('type', 'photo')->count();
+        //Sigo ou nao o perfil
+        $hasRelation = UsersRelation::where('user_from', $this->loggedUser->id)
+            ->where('user_to', $user->id)
+            ->count();
+        $user->isFollowing = ($hasRelation > 0) ? true : false;
+
+
         return response()->json(['user' => $user]);
     }
 
@@ -92,20 +124,20 @@ class UserController extends Controller
         $passowrd_confirm = $request->passowrd_confirm;
 
 
-        if($name){
+        if ($name) {
             $user->name = $name;
         }
 
-        if($city){
+        if ($city) {
             $user->city = $city;
         }
 
-        if($work){
+        if ($work) {
             $user->work = $work;
         }
 
-        if($email){
-            if($email !== $user->email){
+        if ($email) {
+            if ($email !== $user->email) {
                 $emailExists = User::where('email', $email)->count();
                 if ($emailExists > 0) {
                     return response()->json(['error' => 'E-mail já cadastrado.'], 400);
@@ -114,15 +146,15 @@ class UserController extends Controller
             }
         }
 
-        if($birthdate){
+        if ($birthdate) {
             if (strtotime($birthdate) === false) {
                 return response()->json(['error' => 'Data de nascimento inválida.'], 400);
             }
             $user->birthdate = $birthdate;
         }
 
-        if($password && $passowrd_confirm){
-            if($password !== $passowrd_confirm){
+        if ($password && $passowrd_confirm) {
+            if ($password !== $passowrd_confirm) {
                 return response()->json(['error' => 'Senhas não batem.'], 400);
             }
             $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -138,36 +170,36 @@ class UserController extends Controller
     public function updateAvatar(Request $request)
     {
         $array = ['error' => ''];
-        $allowedTypes = ['image/jpg','image/jpeg','image/png'];
+        $allowedTypes = ['image/jpg', 'image/jpeg', 'image/png'];
 
         $image = $request->file('avatar');
         $user = User::find($this->loggedUser->id);
 
-        if(empty($image)){
-            return response()->json(['error' => 'Arquivo não enviado.'],400);
+        if (empty($image)) {
+            return response()->json(['error' => 'Arquivo não enviado.'], 400);
         }
 
-        if(in_array($image->getClientMimeType(), $allowedTypes)){
+        if (in_array($image->getClientMimeType(), $allowedTypes)) {
             $ext = $request->file('avatar')->extension();
             $filename = md5(time() . rand(0, 9999)) . '.' . $ext;
             $destPath = public_path('/medias/avatars');
 
             // //Apagar foto antiga
             $photoOld = '/' . $user->avatar;
-            if (file_exists($destPath.$photoOld) && $user->avatar != 'avatar.jpg') {
-                unlink($destPath.$photoOld);
+            if (file_exists($destPath . $photoOld) && $user->avatar != 'avatar.jpg') {
+                unlink($destPath . $photoOld);
             }
 
             //salvar / atualizar foto
-            $img = Image::make($image->path())->fit(200,200)->save("{$destPath}/{$filename}");
+            Image::make($image->path())->fit(200, 200)->save("{$destPath}/{$filename}");
             $user->avatar = $filename;
             $user->save();
 
             $array['url'] = url("/medias/avatars/{$filename}");
             // $array['url'] = $filename;
 
-        }else{
-            return response()->json(['error' => 'Arquivo não suportado.'],400);
+        } else {
+            return response()->json(['error' => 'Arquivo não suportado.'], 400);
         }
 
         return $array;
@@ -190,14 +222,14 @@ class UserController extends Controller
             $filename = md5(time() . rand(0, 9999)) . '.' . $ext;
             $destPath = public_path('/medias/covers');
 
-            // //Apagar foto antiga
+            //Apagar foto antiga se houver
             $photoOld = '/' . $user->cover;
             if (file_exists($destPath . $photoOld) && $user->cover != 'cover.jpg') {
                 unlink($destPath . $photoOld);
             }
 
             //salvar / atualizar foto
-            $img = Image::make($image->path())->fit(850, 310)->save("{$destPath}/{$filename}");
+            Image::make($image->path())->fit(850, 310)->save("{$destPath}/{$filename}");
             $user->cover = $filename;
             $user->save();
 

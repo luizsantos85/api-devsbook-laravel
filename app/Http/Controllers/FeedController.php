@@ -5,16 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
-use App\Models\UsersRelation;
 use App\Models\User;
+use App\Models\UsersRelation;
 use App\Models\PostsComment;
 use App\Models\PostsLike;
-use App\Models\UserRelation;
 use Image;
 
 class FeedController extends Controller
 {
     private $loggedUser;
+    private $perPage = 2;
 
     public function __construct()
     {
@@ -26,7 +26,6 @@ class FeedController extends Controller
     {
         $array = ['error' => ''];
         $page = intval($request->page);
-        $perPage = 2;
 
         //1. pegar a lista de usuarios q eu sigo.
         $users = [];
@@ -39,12 +38,12 @@ class FeedController extends Controller
         //2. pegar os posts ordenadoo pela data
         $postList = Post::whereIn('user_id', $users)
             ->orderBy('created_at','desc')
-            ->offset($page * $perPage)
-            ->limit($perPage)
+            ->offset($page * $this->perPage)
+            ->limit($this->perPage)
             ->get();
 
         $total = Post::whereIn('user_id', $users)->count();
-        $pageCount = ceil($total / $perPage);
+        $pageCount = ceil($total / $this->perPage);
 
         //3. preencher as informações adicionais
         $posts = $this->postListToObject($postList, $this->loggedUser);
@@ -56,9 +55,34 @@ class FeedController extends Controller
         return $array;
     }
 
-    public function userFeed()
+    public function userFeed(Request $request, $id = false)
     {
+        $array = ['error' => ''];
 
+        if(!$id){
+            $id = $this->loggedUser->id;
+        }
+
+        $page = intval($request->page);
+
+        //Pegar os posts do usuario ordenado pela data
+        $postList = Post::where('user_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->offset($page * $this->perPage)
+            ->limit($this->perPage)
+            ->get();
+
+        $total = Post::where('user_id', $id)->count();
+        $pageCount = ceil($total / $this->perPage);
+
+        //Preencher as informações adicionais
+        $posts = $this->postListToObject($postList, $this->loggedUser);
+
+        $array['posts'] = $posts;
+        $array['pageCount'] =  $pageCount;
+        $array['currentPage'] = $page;
+
+        return $array;
     }
 
     public function create(Request $request)
@@ -129,7 +153,6 @@ class FeedController extends Controller
             }
 
             //preencher informações de usuário
-            // $userInfo = User::find($user->id);
             $user['avatar'] = url('media/avatars/'.$user->avatar);
             $user['cover'] = url('media/covers/'.$user->cover);
             $postList[$postKey]['user'] = $user;
