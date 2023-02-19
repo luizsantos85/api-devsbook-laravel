@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
 use App\Models\PostsLike;
+use App\Models\PostsComment;
 
 class PostController extends Controller
 {
@@ -23,20 +24,20 @@ class PostController extends Controller
 
         //verificar se o post existe
         $postExists = Post::find($id);
-        if(!$postExists){
+        if (!$postExists) {
             return response()->json(['error' => 'Post inexistente.'], 404);
         }
 
         //verificar se ja dei like no post
         $postLike = PostsLike::where('post_id', $postExists->id)->where('user_id', $this->loggedUser->id);
         $isLiked = $postLike->count();
-        if($isLiked > 0){
+        if ($isLiked > 0) {
             $pl = $postLike->first();
             $pl->delete();
 
             // $array['isLiked'] = false;
             $isLiked = false;
-        }else{
+        } else {
             $newPostLike = new PostsLike;
             $newPostLike->post_id = $postExists->id;
             $newPostLike->user_id = $this->loggedUser->id;
@@ -51,14 +52,26 @@ class PostController extends Controller
 
         // return $array;
         return response()->json(['totalLikes' => $totalLikes, 'isLiked' => $isLiked], 200);
-
     }
 
     public function comment(Request $request, $id)
     {
+        //verifica see o post existe
+        $postExists = Post::find($id);
+        if (!$postExists) {
+            return response()->json(['error' => 'Post inexistente.'], 404);
+        }
+        if (!$request->txt) {
+            return response()->json(['error' => 'Comentário não enviado.'], 400);
+        }
 
-        //
-
+        $newPostComment = new PostsComment;
+        $newPostComment->post_id = $postExists->id;
+        $newPostComment->user_id = $this->loggedUser->id;
+        $newPostComment->created_at = now();
+        $newPostComment->body = $request->txt;
+        $newPostComment->save();
+        
+        return response()->json(['Post' => $newPostComment], 200);
     }
-
 }

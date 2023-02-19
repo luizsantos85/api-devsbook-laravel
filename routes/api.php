@@ -42,5 +42,5 @@ Route::get('/feed/user/{id?}', [FeedController::class,'userFeed']);
 Route::post('/post/like/{id}', [PostController::class,'like']);
 Route::post('/post/comment/{id}', [PostController::class,'comment']);
 
-Route::get('/search', [SearchCrontoller::class,'search']);
+Route::get('/search', [SearchController::class,'search']);
 

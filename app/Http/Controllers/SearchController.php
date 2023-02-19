@@ -15,7 +15,8 @@ class SearchController extends Controller
         $this->loggedUser = auth()->user();
     }
 
-    public function search()
+    public function search(Request $request)
     {
+        
     }
 }
