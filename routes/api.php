@@ -23,10 +23,6 @@ Route::get('/ping', function(){
     return ['pong' => true];
 });
 
-// Route::middleware('auth:jwt')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
 Route::get('/401',[AuthController::class, 'unAuthorized'])->name('login');
 
 Route::post('/auth/login', [AuthController::class,'login']);
@@ -35,20 +31,16 @@ Route::post('/auth/refresh', [AuthController::class,'refresh']);
 
 Route::post('/user', [UserController::class,'create']);
 Route::put('/user', [UserController::class,'update']);
-// Route::get('/user', [UserController::class,'read']);
 Route::get('/user/{id?}', [UserController::class,'read']);
 Route::post('/user/avatar', [UserController::class,'updateAvatar']);
 Route::post('/user/cover', [UserController::class,'updateCover']);
 
 Route::get('/feed', [FeedController::class,'read']);
 Route::post('/feed', [FeedController::class,'create']);
-// Route::get('/feed/user', [FeedController::class,'userFeed']);
 Route::get('/feed/user/{id?}', [FeedController::class,'userFeed']);
 
-
-
-Route::post('/post/{id}/like', [PostCrontroller::class,'like']);
-Route::post('/post/{id}/comment', [PostCrontroller::class,'comment']);
+Route::post('/post/like/{id}', [PostController::class,'like']);
+Route::post('/post/comment/{id}', [PostController::class,'comment']);
 
 Route::get('/search', [SearchCrontoller::class,'search']);
 

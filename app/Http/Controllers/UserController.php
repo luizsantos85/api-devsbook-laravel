@@ -105,7 +105,7 @@ class UserController extends Controller
             ->where('user_to', $user->id)
             ->count();
         $user->isFollowing = ($hasRelation > 0) ? true : false;
-
+        
 
         return response()->json(['user' => $user]);
     }
