@@ -105,7 +105,7 @@ class UserController extends Controller
             ->where('user_to', $user->id)
             ->count();
         $user->isFollowing = ($hasRelation > 0) ? true : false;
-        
+
 
         return response()->json(['user' => $user]);
     }
@@ -241,4 +241,20 @@ class UserController extends Controller
 
         return $array;
     }
+
+        public function follow(Request $request, $id)
+        {
+
+        }
+
+        public function followers($id)
+        {
+
+        }
+
+        public function photos($id)
+        {
+
+        }
 }
+

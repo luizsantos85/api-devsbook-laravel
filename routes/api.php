@@ -34,6 +34,9 @@ Route::put('/user', [UserController::class,'update']);
 Route::get('/user/{id?}', [UserController::class,'read']);
 Route::post('/user/avatar', [UserController::class,'updateAvatar']);
 Route::post('/user/cover', [UserController::class,'updateCover']);
+Route::post('/user/follow/{id}', [UserController::class,'follow']);
+Route::get('/user/followers/{id}', [UserController::class,'followers']);
+Route::get('/user/photos/{id}', [UserController::class,'photos']);
 
 Route::get('/feed', [FeedController::class,'read']);
 Route::post('/feed', [FeedController::class,'create']);
