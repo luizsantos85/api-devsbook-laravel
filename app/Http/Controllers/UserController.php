@@ -242,19 +242,70 @@ class UserController extends Controller
         return $array;
     }
 
-        public function follow(Request $request, $id)
-        {
-
+    public function follow($id)
+    {
+        if ($id == $this->loggedUser->id) {
+            return response()->json(['error' => 'Você não pode seguir a si mesmo.'], 400);
         }
 
-        public function followers($id)
-        {
-
+        $userExists = User::find($id);
+        if (!$userExists) {
+            return response()->json(['error' => 'Usuário inexistente.'], 400);
         }
 
-        public function photos($id)
-        {
+        $relation = UsersRelation::where('user_from', $this->loggedUser->id)
+            ->where('user_to', $id);
+        // ->first();
+        $hasRelation = $relation->count();
 
+        if ($hasRelation > 0) {
+            $userRelation = $relation->first();
+            //parar de seguir se tiver relacionamento
+            $userRelation->delete();
+
+            $hasRelation = false;
+        } else {
+            $newRelation = new UsersRelation;
+            $newRelation->user_from = $this->loggedUser->id;
+            $newRelation->user_to = $id;
+            $newRelation->save();
+
+            $hasRelation = true;
         }
+
+        return response()->json(['relation' => $hasRelation], 200);
+    }
+
+    public function followers($id)
+    {
+        $userExists = User::find($id);
+        if (!$userExists) {
+            return response()->json(['error' => 'Usuário inexistente.'], 400);
+        }
+
+        $followers = [];
+        $followings = [];
+        $followers = UsersRelation::where('user_to', $id)->get();
+        $followings = UsersRelation::where('user_from', $id)->get();
+
+        foreach ($followers as $follower) {
+            $user = User::find($follower['user_from']);
+            $follower->id = $user->id;
+            $follower->name = $user->name;
+            $follower->avatar = url('media/avatars/' . $user->avatar);
+        }
+
+        foreach ($followings as $following) {
+            $user = User::find($following['user_from']);
+            $following->id = $user->id;
+            $following->name = $user->name;
+            $following->avatar = url('media/avatars/' . $user->avatar);
+        }
+
+        return response()->json(['followers' => $followers, 'followings' => $followings, ],200);
+    }
+
+    public function photos($id)
+    {
+    }
 }
-
