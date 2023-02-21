@@ -77,6 +77,11 @@ class FeedController extends Controller
 
         //Preencher as informações adicionais
         $posts = $this->postListToObject($postList, $this->loggedUser);
+        foreach ($posts as $post) {
+            if($post->type == 'photo'){
+                $post->body = url('media/uploads/' . $post->body);
+            }
+        }
 
         $array['posts'] = $posts;
         $array['pageCount'] =  $pageCount;
@@ -138,6 +143,42 @@ class FeedController extends Controller
 
             $array['post'] = $newPost;
         }
+
+        return $array;
+    }
+
+    public function userPhotos(Request $request, $id = false)
+    {
+        $array = ['error' => ''];
+
+        if (!$id) {
+            $id = $this->loggedUser->id;
+        }
+
+        $page = intval($request->page);
+
+        //Pegar os fotos do usuario ordenado pela data
+        $postList = Post::where('user_id', $id)
+            ->where('type', 'photo')
+            ->orderBy('created_at', 'desc')
+            ->offset($page * $this->perPage)
+            ->limit($this->perPage)
+            ->get();
+
+        $total = Post::where('user_id', $id)->where('type', 'photo')->count();
+        $pageCount = ceil($total / $this->perPage);
+
+        //Preencher as informações adicionais
+        $posts = $this->postListToObject($postList, $this->loggedUser);
+
+        foreach ($posts as $pkey => $post) {
+            // $post->body = url('media/uploads/' . $post->body);
+            $posts[$pkey]->body = url('media/uploads/' . $post->body);
+        }
+
+        $array['posts'] = $posts;
+        $array['pageCount'] =  $pageCount;
+        $array['currentPage'] = $page;
 
         return $array;
     }

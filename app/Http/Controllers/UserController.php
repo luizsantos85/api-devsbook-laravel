@@ -301,11 +301,7 @@ class UserController extends Controller
             $following->name = $user->name;
             $following->avatar = url('media/avatars/' . $user->avatar);
         }
-
         return response()->json(['followers' => $followers, 'followings' => $followings, ],200);
     }
 
-    public function photos($id)
-    {
-    }
 }
